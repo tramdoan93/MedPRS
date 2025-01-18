@@ -1,3 +1,4 @@
+# %%writefile Main_TAKS.py
 # -*- coding: utf-8 -*-
 import os
 import re
@@ -9,19 +10,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-import bitsandbytes as bnb
-from peft.tuners.lora import LoraLayer
-from transformers import BitsAndBytesConfig
 from transformers import AutoTokenizer, AutoConfig, AutoModelForSequenceClassification, AutoModel
 from transformers.modeling_outputs import SequenceClassifierOutput, BaseModelOutputWithPoolingAndCrossAttentions
 from tqdm import tqdm  # changed tqdm import from tqdm.notebook
-from peft import (
-    prepare_model_for_kbit_training,
-    LoraConfig,
-    get_peft_model,
-    get_peft_model_state_dict,
-    set_peft_model_state_dict,
-)
 from typing import Any, Callable, Dict, List, NewType, Optional, Tuple, Union
 import numpy as np
 
@@ -383,67 +374,12 @@ if __name__ == '__main__':
     print("Finish encoding data")
     """# Model definition"""
     """## Load fine-tuned LM"""
-    model = AutoModel.from_pretrained(
-        args.model_name,
-        load_in_4bit=True,
-        config=None,
-        quantization_config=BitsAndBytesConfig(
-            load_in_4bit=True,
-            llm_int8_threshold=6.0,
-            llm_int8_has_fp16_weight=False,
-            bnb_4bit_compute_dtype=torch.float32,
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_quant_type='nf4',
-        ),
-        torch_dtype=torch.float32
-    )
-
-    model = prepare_model_for_kbit_training(model)
-
-
-    def find_all_linear_names(model):
-        cls = bnb.nn.Linear4bit
-        lora_module_names = set()
-        for name, module in model.named_modules():
-            if isinstance(module, cls):
-                names = name.split('.')
-                lora_module_names.add(names[0] if len(names) == 1 else names[-1])
-
-        return list(lora_module_names)
-
-
-    target_modules = find_all_linear_names(model)
-    print(target_modules)
-
-    config = LoraConfig(
-        r=8,
-        lora_alpha=32,
-        target_modules=target_modules,
-        lora_dropout=0.1,
-        bias="none",
-        task_type="classification"
-    )
-
-    model = get_peft_model(model, config)
-
-    for name, module in model.named_modules():
-        if isinstance(module, LoraLayer):
-            # module = module.to(torch.bfloat16)
-            module = module.to(torch.float32)
-        if 'norm' in name:
-            module = module.to(torch.float32)
-        if 'lm_head' in name or 'embed_tokens' in name:
-            if hasattr(module, 'weight'):
-                # module = module.to(torch.bfloat16)
-                module = module.to(torch.float32)
-    model.print_trainable_parameters()
 
     # # Fine-tuned LM checkpoint (by contrastive learning)
     checkpoint_cl_finetuned = torch.load(args.checkpoint_path, map_location=device,
                                          weights_only=True)  # ensure device for loading
 
     model_args = {
-        'model': model,
         'model_name_or_path': args.model_name,
         'pooler_type': args.pooler_type
     }
