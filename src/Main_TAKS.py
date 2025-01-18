@@ -1,20 +1,29 @@
 # %%writefile Main_TAKS.py
 # -*- coding: utf-8 -*-
-import os
 import re
-import pandas as pd
-from numpy import ndarray
 import argparse
 from datetime import datetime
+import os # file management
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from torch import Tensor
-from transformers import AutoTokenizer, AutoConfig, AutoModelForSequenceClassification, AutoModel
-from transformers.modeling_outputs import SequenceClassifierOutput, BaseModelOutputWithPoolingAndCrossAttentions
-from tqdm import tqdm  # changed tqdm import from tqdm.notebook
-from typing import Any, Callable, Dict, List, NewType, Optional, Tuple, Union
+from torch import nn, Tensor # neural network
+# numerical matrix processing
 import numpy as np
+from numpy import ndarray
+
+# data/parameter loading
+import pandas as pd
+# visualization
+from tqdm import trange, tqdm
+# transfomers
+from transformers import AutoTokenizer, AutoModel
+from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
+
+# code instruction
+from typing import Union, List, Dict
+# filter out warnings
+import warnings
+warnings.filterwarnings('ignore')
+
 
 """## Some useful functions"""
 
